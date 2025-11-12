@@ -1,0 +1,24 @@
+import argparse
+import asyncio
+import os
+from eprda.config.config_loader import load_env, Settings
+from eprda.flows.dp_registration_submission_flow import dp_complete_registration_submission_flow, dp_submit_registration_data_flow, regulator_accept_registration_submission
+
+
+async def main():
+    parser = argparse.ArgumentParser(description="Create an enrolment via UI and return credentials.")
+    parser.add_argument("--email", required=True, help="Contact email; can include {rand} token")
+    parser.add_argument("--env", default=None, help="ENV_PROFILE; default uses ENV_PROFILE or 'dev15'")
+    args = parser.parse_args()
+
+    # Override environment profile if provided
+    if args.env:
+        os.environ["ENV_PROFILE"] = args.env
+
+    # Load environment variables
+    load_env()
+    settings = Settings()
+    await dp_complete_registration_submission_flow(settings.producer_base_url, args.email, "Password123")   
+
+if __name__ == "__main__":
+    asyncio.run(main())

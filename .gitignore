@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+artifacts/
+reports/
+logs/
+playwright-report/
+test-results/
+videos/
+.DS_Store
+.direnv/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# OS & Editor files
+Thumbs.db
+ehthumbs.db
+*.swp
+*.swo
+*.bak
+*.tmp
+.idea/
+EOF
+
+# Output files
+output/
+
+# Secrets file
+config/credentials/.secrets

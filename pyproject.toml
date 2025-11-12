@@ -1,0 +1,75 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "epr-data-automation"
+version = "0.1.0"
+description = "EPR automation utilities + UI/API/DB test suites"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "typer[all]>=0.12.0",
+  "rich>=13.9.2",
+  "python-dotenv>=1.0.1",
+  "httpx>=0.27.0",
+  "pydantic>=2.8.2",
+  "sqlalchemy>=2.0.35",
+  "pandas>=2.2.3",
+  "playwright>=1.47.0",
+  "pytest>=8.2.0",
+  "pytest-asyncio>=0.23.8",
+  "pytest-playwright>=0.5.0",
+  "pytest-xdist>=3.6.0",
+  "pytest-html>=4.1.1",
+  "psycopg[binary]>=3.2.1",
+  "pyodbc>=5.1.0",
+  "oracledb>=2.4.0",
+  "PyJWT>=2.8.0",
+  "requests>=2.31.0",
+]
+
+[project.scripts]
+eprda = "eprda.cli:app"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "-ra -q --maxfail=1 --html=reports/report.html --self-contained-html"
+markers = [
+    "smoke: quick checks for CI",
+    "regression: full suite",
+    "data: data integrity checks"
+]
+
+##########################################
+# ✅ Ruff: Linting & Formatting
+##########################################
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+# E = pycodestyle, F = pyflakes, I = import sorting
+select = ["E", "F", "I"]
+ignore = []
+
+# Ruff auto-formatter (Black-compatible)
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+
+##########################################
+# ✅ Mypy: Optional Static Type Checking
+##########################################
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unused_configs = true
