@@ -1,87 +1,86 @@
 import os
-from pathlib import Path
-from dotenv import dotenv_values, load_dotenv
-# Project root: go up from src/eprda/config to find project root
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
-
-# Directory where .env files live
-ENV_DIR = PROJECT_ROOT / "config" / "environments"
+from dotenv import load_dotenv, dotenv_values
+from src.eprda.utils.csv_factory import PROJECT_ROOT
 
 
-def load_env(profile: str | None = None) -> str:
+class EnvConfig:
     """
-    Load environment variables from:
-        config/environments/.env.<profile>
+    Unified configuration handler for environment and secret values.
 
-    - profile comes from ENV_PROFILE env var
-    - defaults to 'dev15'
-    - example files:
-        .env.dev15
-        .env.tst1
-        .env.tst2
-
-    Returns:
-        The resolved profile name (str)
+    This class:
+      - Loads environment-specific .env files (e.g., .env.dev15)
+      - Loads sensitive credentials from a .secrets file
+      - Provides unified access to both environment variables and secrets
     """
-    # Determine profile
-    profile = profile or os.getenv("ENV_PROFILE", "dev15")
-    profile = profile.strip()
 
-    # Resolve file path
-    env_file = ENV_DIR / f".env.{profile}"
-
-    if not env_file.exists():
-        raise FileNotFoundError(
-            f"❌ Environment file not found: {env_file}\n"
-            f"Make sure the file exists under config/environments/"
-        )
-
-    # Load .env file
-    load_dotenv(env_file, override=True)
-    print(f"✅ Loaded environment: {env_file}")
-
-    return profile
-
-
-def get_bool(name: str, default: bool) -> bool:
-    """Parse an environment variable as a boolean."""
-    v = os.getenv(name, str(default)).strip().lower()
-    return v in ("1", "true", "yes", "on")
-
-
-class Settings:
-    """Centralized settings for automation."""
+    # Default environment (can be overridden by ENV system variable)
+    ENV = os.getenv("ENV", "dev15")
 
     def __init__(self):
-        self.producer_base_url = os.getenv("PRODUCER_BASE_URL")
-        self.regulator_base_url = os.getenv("REGULATOR_BASE_URL")
-        self.headless = get_bool("HEADLESS", True)
+        # Load environment variables and secrets during initialization
+        self._load_env()
+        self._load_secrets()
 
-        if not self.producer_base_url:
-            raise EnvironmentError(
-                "❌ PRODUCER_BASE_URL not set — missing or incorrect .env file."
-            )
+    def _load_env(self):
+        """
+        Loads environment variables from the .env file
+        corresponding to the selected environment.
+        Example: config/environments/.env.dev15
+        """
+        env_file = f"config/environments/.env.{self.ENV}"
 
-    def __repr__(self):
-        return (
-            f"<Settings producer_base_url={self.producer_base_url}, "
-            f"regulator_base_url={self.regulator_base_url}, "
-            f"headless={self.headless}>"
-        )
+        # Ensure the environment file exists before loading
+        if not os.path.isfile(env_file):
+            raise FileNotFoundError(f"Missing environment file: {env_file}")
 
-class Secrets:
-    _secrets_path = PROJECT_ROOT / "config" / "credentials" / ".secrets"
-    _secrets = dotenv_values(dotenv_path=_secrets_path)
+        # Load variables into the process environment
+        load_dotenv(env_file)
+        print(f"✅ Loaded environment: {self.ENV}")
 
-    def __init__(self):
-        self.ISSUER = self._clean_value(Secrets._secrets.get("ISSUER"))
-        self.SECRET = self._clean_value(Secrets._secrets.get("SECRET"))
-        self.COMPANY_HOUSE_TOKEN = self._clean_value(Secrets._secrets.get("COMPANY_HOUSE_TOKEN"))
+    def _load_secrets(self):
+        """
+        Loads sensitive credentials from the .secrets file.
+        Example: config/credentials/.secrets
+        """
+        secrets_file = PROJECT_ROOT / "config" / "secrets" / ".secrets"
 
-    def _clean_value(self, value):
+        # Ensure the secrets file exists before loading
+        if not secrets_file.exists():
+            raise FileNotFoundError(f"Missing secrets file: {secrets_file}")
+
+        # Read and clean up all key-value pairs
+        self._secrets = {
+            k: self._clean(v)
+            for k, v in dotenv_values(secrets_file).items()
+        }
+
+        # Optionally, attach secrets as attributes for direct access (e.g., config.ISSUER)
+        self.__dict__.update(self._secrets)
+
+    @staticmethod
+    def _clean(value):
+        """
+        Strips whitespace and surrounding quotes from a value.
+        Ensures clean and consistent formatting.
+        """
+        return value.strip().strip('"').strip("'") if value else None
+
+    def getConfig(self, key: str) -> str:
+        """
+        Retrieves a configuration value.
+
+        - Checks environment variables first (from .env)
+        - Falls back to secrets if not found
+        - Raises KeyError if the key does not exist
+        """
+        value = os.getenv(key) or self._secrets.get(key)
         if value is None:
-            return None
-        return value.strip().strip('"').strip("'")
+            raise KeyError(f"Missing key: {key}")
+        return value
 
-    def all(self):
-        return {k: self._clean_value(v) for k, v in Secrets._secrets.items()}
+    def all(self) -> dict:
+        """
+        Returns all loaded secrets as a dictionary.
+        Useful for debugging or inspection (avoid printing in production).
+        """
+        return self._secrets

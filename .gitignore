@@ -30,4 +30,4 @@ EOF
 output/
 
 # Secrets file
-config/credentials/.secrets
+config/secrets/.secrets
