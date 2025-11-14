@@ -1,11 +1,11 @@
 from __future__ import annotations
 import asyncio
+from typing import Optional
+
 from playwright.async_api import Page, expect
 from sqlalchemy import Enum
-from eprda.clients.notifications_client import get_notification_response, get_verification_code
+from eprda.clients.notifications_client import NotificationsClient
 from .base_page import BasePage
-from eprda.config.config_loader import Secrets
-
 
 # ==========================================================
 # Enums
@@ -18,10 +18,10 @@ class YesNo(Enum):
 # CreateAccountPage
 # ==========================================================
 class CreateAccountPage(BasePage):
-    secrets: Secrets
-    def __init__(self, page: Page):
+    
+    def __init__(self, page: Page, notifications: Optional[NotificationsClient] = None):
         super().__init__(page)
-        self.secrets = Secrets()
+        self._notifications = notifications
         self.email_input = page.locator("#email")
         self.send_verification_code_button = page.locator("#emailVerificationControl_but_send_code")
         self.verification_code_input = page.locator("#verificationCode")
@@ -30,15 +30,19 @@ class CreateAccountPage(BasePage):
         self.retype_password_input = page.locator("#reenterPassword")
         self.create_button = page.locator("button#continue")
 
+    def set_notifications_client(self, notifications: NotificationsClient) -> None:
+        self._notifications = notifications
+
     async def create_producer_account(self, email: str) -> RegisteredCharityPage:
         await self.email_input.fill(email)
         await self.send_verification_code_button.click()
         await asyncio.sleep(1)
-        notification_response = await get_notification_response(
-            target_email=email, issuer=self.secrets.ISSUER, secret=self.secrets.SECRET
-        )
+        if not self._notifications:
+            raise RuntimeError("NotificationsClient is not set on CreateAccountPage")    
 
-        verification_code = get_verification_code(notification_response)
+        body = await self._notifications.fetch_notification_body(email)
+        verification_code = self._notifications.extract_verification_code(body)
+
         print(f"Email: {email}")
         print(f"Verification code retrieved: {verification_code}")
         
