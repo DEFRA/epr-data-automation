@@ -96,10 +96,34 @@ This installs:
 python -m eprda.cli.dp_enrolment
 ```
 
-### ✅ Direct Producer Registration Submission
+### ✅ Direct Producer - Registration Submission
 
 ```bash
 python -m eprda.cli.dp_registration_submission
+```
+
+### ✅ Direct Producer - Regulator Accept Registration Submission
+
+```bash
+python -m eprda.cli.regulator_accept_registration_submission
+```
+
+### ✅ Direct Producer - Report Packaging Data 
+
+```bash
+python -m eprda.cli.dp_report_packaging_data
+```
+
+### ✅ Create ORG File 
+
+```bash
+python -m eprda.cli.create_org_file
+```
+
+### ✅ Create POM File 
+
+```bash
+python -m eprda.cli.create_pom_file
 ```
 
 Use a specific environment profile:
