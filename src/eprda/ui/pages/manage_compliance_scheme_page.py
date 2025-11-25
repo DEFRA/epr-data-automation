@@ -1,8 +1,8 @@
 import re
 from playwright.async_api import Page, expect
-from .registration_page import RegistrationGuidancePage
 from .signin_page import SigninPage
 from .base_page import BasePage
+from sqlalchemy import Enum
 
 # ==========================================================
 # ManageComplianceSchemePage
@@ -31,8 +31,41 @@ class ManageComplianceSchemePage(BasePage):
         await expect(self.page.get_by_role("heading", name="Signed out")).to_be_visible()
         return SigninPage(self.page)
     
-    async def click_report_packaging_data_link(self):
-        from src.eprda.ui.pages.change_compliance_scheme_options_page import ChangeComplianceSchemeOptionsPage
+    async def click_report_packaging_data_link(self) -> "ChangeComplianceSchemeOptionsPage":
         await self.change_or_remove_compliance_sceheme_link.click()
         return ChangeComplianceSchemeOptionsPage(self.page)
 
+# ==========================================================
+# ChangeComplianceSchemeOptionsPage
+# ==========================================================
+
+class ComplianceSchemeOption(Enum):
+    CHANGE = "ChooseNewComplianceScheme"
+    STOP = "StopComplianceScheme"
+   
+class ChangeComplianceSchemeOptionsPage(BasePage):
+
+    def __init__(self, page: Page):
+        super().__init__(page)
+        self.continue_button = page.get_by_role("button", name="Continue")
+
+def update_compliance_scheme_changes(self, option: ComplianceSchemeOption):
+    self.page.locator(
+        f"input.govuk-radios__input[value='{option.value}']"
+    ).check()
+    self.continue_button.click()
+
+# ==========================================================
+# StopUsingComplianceSchemePage
+# ==========================================================
+
+class StopUsingComplianceSchemePage(Enum):
+
+    def __init__(self, page: Page):
+        super().__init__(page)
+        self.remove_compliance_scheme_button = page.get_by_role("button", name="Remove compliance scheme")
+
+    async def update_compliance_scheme_changes(self):
+        from src.eprda.ui.pages.direct_producer_dashboard_page import DirectProducerDashboardPage
+        self.remove_compliance_scheme_button.click()
+        return DirectProducerDashboardPage(self.page)
