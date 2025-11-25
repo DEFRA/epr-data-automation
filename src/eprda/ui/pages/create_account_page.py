@@ -252,11 +252,42 @@ class UsingCompliancePage(BasePage):
         YES = "true"
         NO = "false"
 
-    async def select_is_organisation_registered_charity(self, option: "UsingCompliance"):
+    async def select_are_you_using_compliance_scheme(self, option: "UsingCompliance"):
         from src.eprda.ui.pages.direct_producer_dashboard_page import DirectProducerDashboardPage
         selector = f"input[name='UsingComplianceScheme'][value='{option}']"
         await self.page.locator(selector).click()
         await self.continue_button.click()
-        return DirectProducerDashboardPage(self.page)
+        if(option == self.UsingCompliance.YES):
+            return SelectComplianceSchemePage(self.page)
+        else:
+            return DirectProducerDashboardPage(self.page)
     
+# ==========================================================
+# SelectComplianceSchemePage
+# ==========================================================
+class SelectComplianceSchemePage(BasePage):
+
+    def __init__(self, page: Page):
+        super().__init__(page)
+        self.continue_button = page.get_by_role("button", name="Continue")
+
+    async def select_compliance_scheme_name(self, compliance_scheme_name: str) -> ComplianceSchemeConfirmationPage:
+        await self.page.get_by_label(compliance_scheme_name).click()
+        await self.continue_button.click()
+        return ComplianceSchemeConfirmationPage(self.page)
+    
+# ==========================================================
+# ComplianceSchemeConfirmationPage
+# ==========================================================
+class ComplianceSchemeConfirmationPage(BasePage):
+
+    def __init__(self, page: Page):
+        super().__init__(page)
+        self.confirm_button = page.get_by_role("button", name="Confirm")
+
+    async def click_confirm_button(self):
+        from src.eprda.ui.pages.manage_compliance_scheme_page import ManageComplianceSchemePage
+        await self.confirm_button.click()
+        return ManageComplianceSchemePage(self.page)
+
     
