@@ -24,7 +24,7 @@ class EnrolmentResult:
     company_number: str
 
 
-async def create_dp_enrolment_flow(
+async def create_cs_enrolment_flow(
     producer_base_url: str,
     email: str,
     ch: CompaniesHouseClient,
@@ -65,10 +65,13 @@ async def create_dp_enrolment_flow(
 
         landing_page = await declaration_page.click_confirm_details_and_create_account()
         using_compliance_page = await landing_page.verify_account_creation()
-        direct_producer_dashboard_page = await using_compliance_page.select_are_you_using_compliance_scheme(using_compliance_page.UsingCompliance.NO)
-
-        organisation_id = await direct_producer_dashboard_page.get_organisation_id(company_name)
-        await direct_producer_dashboard_page.logout()
+        select_compliance_scheme_page = await using_compliance_page.select_are_you_using_compliance_scheme(using_compliance_page.UsingCompliance.YES)
+        
+        compliance_scheme_confirmation_page = await select_compliance_scheme_page.select_compliance_scheme_name('CS_GENERATED_0215605_England')
+        manage_compliance_scheme_page = await compliance_scheme_confirmation_page.click_confirm_button()
+        
+        organisation_id = await manage_compliance_scheme_page.get_organisation_id(company_name)
+        await manage_compliance_scheme_page.logout()
 
         return EnrolmentResult(
             organisation_id=organisation_id,
