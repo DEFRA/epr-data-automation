@@ -128,7 +128,7 @@ class DeclarationPage(BasePage):
 class OrganisationDetailsConfirmationPage(BasePage):
     def __init__(self, page: Page):
         super().__init__(page)
-        self.org_details_submission_status = page.get_by_role("heading", name="Organisation details submitted")
+        self.org_details_submission_status = page.get_by_role("heading", name="Registration data submitted")
         
     async def verify_org_details_submission_status(self):
         await expect(self.org_details_submission_status).to_be_visible()
